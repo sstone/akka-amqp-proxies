@@ -7,17 +7,16 @@ import amqp.{ConnectionOwner, RpcServer, RpcClient}
 import akka.util.Timeout
 import akka.util.duration._
 import akka.serialization.Serializer
-import net.liftweb.json.{TypeInfo, Extraction, Serialization, DefaultFormats}
 import com.rabbitmq.client.ConnectionFactory
 import akka.routing.SmallestMailboxRouter
+import com.codahale.jerkson.Json
 
 object JsonSerializer extends Serializer {
-  implicit val formats = DefaultFormats
   def identifier = 123456789
   def includeManifest = true
-  def toBinary(o: AnyRef) = Serialization.write(o).getBytes
+  def toBinary(o: AnyRef) = Json.generate(o).getBytes
   def fromBinary(bytes: Array[Byte], manifest: Option[Class[_]]): AnyRef = {
-    Extraction.extract(net.liftweb.json.parse(new String(bytes)), TypeInfo(manifest.get, None)).asInstanceOf[AnyRef]
+    Json.parse(new String(bytes))(Manifest.classType(manifest.get))
   }
 }
 

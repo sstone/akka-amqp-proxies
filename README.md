@@ -7,11 +7,11 @@ fault-tolerant grid where computing nodes can be written in nearly every program
 
 To start the demo with local actors:
 
-> java -cp akka-amqp-proxies-1.0-SNAPSHOT-jar-with-dependencies.jar com.aphelia.Local
+> java -cp akka-amqp-proxies-1.0-SNAPSHOT-shaded.jar com.aphelia.Local
 
 To start the demo with a client proxy and remote server actors:
 
-> java -cp akka-amqp-proxies-1.0-SNAPSHOT-jar-with-dependencies.jar com.aphelia.Server
+> java -cp akka-amqp-proxies-1.0-SNAPSHOT-shaded.jar com.aphelia.Server
 
-> java -cp akka-amqp-proxies-1.0-SNAPSHOT-jar-with-dependencies.jar com.aphelia.Client
+> java -cp akka-amqp-proxies-1.0-SNAPSHOT-shaded.jar com.aphelia.Client
 
