@@ -110,7 +110,7 @@
         </repository>
         <repository>
             <id>sstone</id>
-            <url>https://github.com/sstone/sstone-mvn-repo/raw/master/snapshots</url>
+            <url>http://sstone.github.com/sstone-mvn-repo/snapshots</url>
         </repository>
     </repositories>
 
