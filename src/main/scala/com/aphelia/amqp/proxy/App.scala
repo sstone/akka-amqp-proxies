@@ -3,6 +3,7 @@ package com.aphelia
 import akka.actor._
 import akka.pattern.ask
 import amqp.Amqp._
+import amqp.proxy.AmqpProxy
 import amqp.{ConnectionOwner, RpcServer, RpcClient}
 import akka.util.Timeout
 import akka.util.duration._
