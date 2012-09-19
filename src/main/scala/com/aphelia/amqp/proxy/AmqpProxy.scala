@@ -12,7 +12,6 @@ import akka.util.Timeout
 import akka.pattern.ask
 import akka.util.duration._
 import grizzled.slf4j.Logging
-import com.aphelia.serializers.{SnappyJsonSerializer, JsonSerializer}
 import com.rabbitmq.client.AMQP
 
 
@@ -40,12 +39,12 @@ object AmqpProxy {
     def onFailure(delivery: Delivery, e: Exception) = makeResult(serialize(Failure(1, e.toString), delivery.properties.getContentEncoding))
   }
 
-  class ProxyClient(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, timeout: Timeout = 30 seconds) extends Actor {
+  class ProxyClient(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, timeout: Timeout = 30 seconds, mandatory: Boolean = true, immediate: Boolean = true, deliveryMode: Int = 1) extends Actor {
 
     protected def receive = {
       case msg: AnyRef => {
         val serialized = serialize(msg, serializer)
-        val publish = Publish(exchange, routingKey, serialized._1, Some(serialized._2), mandatory = true, immediate = false)
+        val publish = Publish(exchange, routingKey, serialized._1, Some(serialized._2), mandatory = mandatory, immediate = immediate)
         val future: Future[RpcClient.Response] = (client ? RpcClient.Request(publish :: Nil, 1))(timeout).mapTo[RpcClient.Response]
         val dest = sender
         future.onComplete {
@@ -56,6 +55,18 @@ object AmqpProxy {
           }
           case Left(error) => dest ! akka.actor.Status.Failure(error)
         }
+      }
+    }
+  }
+
+  class ProxySender(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, mandatory: Boolean = true, immediate: Boolean = true, deliveryMode: Int = 1) extends Actor {
+
+    protected def receive = {
+      case msg: AnyRef => {
+        val (body, props) = serialize(msg, serializer)
+        val propsWithDeliveryMode = new BasicProperties.Builder().contentEncoding(props.getContentEncoding).contentType(props.getContentType).deliveryMode(deliveryMode).build
+        val publish = Publish(exchange, routingKey, body, Some(propsWithDeliveryMode), mandatory = mandatory, immediate = immediate)
+        client ! RpcClient.Request(publish :: Nil, 1)
       }
     }
   }
