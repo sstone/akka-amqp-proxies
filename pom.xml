@@ -138,6 +138,7 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.0.7</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.clapper</groupId>
@@ -154,12 +155,6 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-testkit</artifactId>
             <version>${akka.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.scala-tools.testing</groupId>
-            <artifactId>specs_2.9.2</artifactId>
-            <version>1.6.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>

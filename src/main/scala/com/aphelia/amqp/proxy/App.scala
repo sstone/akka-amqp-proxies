@@ -45,7 +45,7 @@ object Server {
     // them to our Calculator actor
     val server = ConnectionOwner.createActor(
       conn,
-      Props(new RpcServer(queue, exchange, "calculator", new AmqpProxy.ProxyServer(calc, JsonSerializer), channelParams)),
+      Props(new RpcServer(queue, exchange, "calculator", new AmqpProxy.ProxyServer(calc), channelParams)),
       2 second)
 
     waitForConnection(system, server).await()
