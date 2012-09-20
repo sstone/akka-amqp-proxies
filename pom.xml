@@ -29,11 +29,13 @@
                         </goals>
                         <configuration>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.aphelia.Client</mainClass>
                                 </transformer>
                                 <!-- merge all Akka reference.conf files -->
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>reference.conf</resource>
                                 </transformer>
                             </transformers>
@@ -101,7 +103,7 @@
             <id>repo.codahale.com</id>
             <url>http://repo.codahale.com</url>
         </repository>
-       <repository>
+        <repository>
             <id>sstone snapshots</id>
             <url>http://sstone.github.com/sstone-mvn-repo/snapshots</url>
         </repository>
@@ -132,6 +134,11 @@
             <artifactId>logback-classic</artifactId>
             <version>1.0.7</version>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>2.4.1</version>
         </dependency>
         <dependency>
             <groupId>org.clapper</groupId>
