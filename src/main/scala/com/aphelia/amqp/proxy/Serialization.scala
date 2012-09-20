@@ -4,11 +4,12 @@ import com.aphelia.serializers.{SnappyJsonSerializer, JsonSerializer}
 import com.aphelia.amqp.Amqp.Delivery
 import com.rabbitmq.client.AMQP.BasicProperties
 import akka.serialization.Serializer
+import serializers.ProtobufSerializer
 
 
 object Serialization {
 
-  val serializersMap = Map("json" -> JsonSerializer, "snappy-json" -> SnappyJsonSerializer)
+  val serializersMap = Map("json" -> JsonSerializer, "snappy-json" -> SnappyJsonSerializer, "protobuf" -> ProtobufSerializer)
 
   def getSerializer(contentEncoding: String) = serializersMap.getOrElse(contentEncoding, JsonSerializer)
 
