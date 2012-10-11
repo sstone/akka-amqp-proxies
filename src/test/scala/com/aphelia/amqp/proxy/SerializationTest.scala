@@ -3,8 +3,7 @@ package com.aphelia.amqp.proxy
 import gpbtest.Gpbtest
 import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Test
-import com.aphelia.serializers.{SnappyJsonSerializer, JsonSerializer}
-import serializers.ProtobufSerializer
+import serializers.{SnappyJsonSerializer, JsonSerializer, ProtobufSerializer}
 
 case class Message(a: String, b: Int)
 

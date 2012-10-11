@@ -1,28 +1,17 @@
-package com.aphelia
+package com.aphelia.amqp.proxy
 
 import akka.actor._
 import akka.pattern.ask
-import amqp.Amqp._
-import amqp.proxy.AmqpProxy
-import amqp.{ConnectionOwner, RpcServer, RpcClient}
 import akka.util.Timeout
 import akka.util.duration._
-import akka.serialization.Serializer
 import com.rabbitmq.client.ConnectionFactory
 import akka.routing.SmallestMailboxRouter
-import com.codahale.jerkson.Json
+import com.aphelia.amqp.{Amqp, RpcClient, RpcServer, ConnectionOwner}
+import com.aphelia.amqp.Amqp.{ChannelParameters, QueueParameters, ExchangeParameters}
+import serializers.JsonSerializer
 
-object JsonSerializer extends Serializer {
-  def identifier = 123456789
-  def includeManifest = true
-  def toBinary(o: AnyRef) = Json.generate(o).getBytes
-  def fromBinary(bytes: Array[Byte], manifest: Option[Class[_]]): AnyRef = {
-    Json.parse(new String(bytes))(Manifest.classType(manifest.get))
-  }
-}
-
-case class Failure(error: Int, reason: String)
 case class AddRequest(x: Int, y: Int)
+
 case class AddResponse(sum: Int)
 
 class Calculator extends Actor {
@@ -48,7 +37,7 @@ object Server {
       Props(new RpcServer(queue, exchange, "calculator", new AmqpProxy.ProxyServer(calc), channelParams)),
       2 second)
 
-    waitForConnection(system, server).await()
+    Amqp.waitForConnection(system, server).await()
   }
 }
 
@@ -65,6 +54,7 @@ object Client {
       }
     }
   }
+
   def main(args: Array[String]) {
     val system = ActorSystem("MySystem")
     val connFactory = new ConnectionFactory()
@@ -72,7 +62,7 @@ object Client {
     // create a "connection owner" actor, which will try and reconnect automatically if the connection ins lost
     val conn = system.actorOf(Props(new ConnectionOwner(connFactory)), name = "conn")
     val client = ConnectionOwner.createActor(conn, Props(new RpcClient()), 5 second)
-    waitForConnection(system, client).await()
+    Amqp.waitForConnection(system, client).await()
     val proxy = system.actorOf(
       Props(new AmqpProxy.ProxyClient(client, "amq.direct", "calculator", JsonSerializer)),
       name = "proxy")
@@ -81,7 +71,7 @@ object Client {
 }
 
 object Local {
-  def main(args:Array[String]) {
+  def main(args: Array[String]) {
     val system = ActorSystem("MySystem")
     val calc = system.actorOf(Props[Calculator].withRouter(SmallestMailboxRouter(nrOfInstances = 8)))
     Client.compute(calc)
