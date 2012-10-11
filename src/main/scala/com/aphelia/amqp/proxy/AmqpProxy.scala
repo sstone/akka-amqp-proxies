@@ -39,19 +39,33 @@ object AmqpProxy {
     def onFailure(delivery: Delivery, e: Exception) = makeResult(serialize(Failure(1, e.toString), delivery.properties.getContentEncoding))
   }
 
-  class ProxyClient(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, timeout: Timeout = 30 seconds, mandatory: Boolean = true, immediate: Boolean = true, deliveryMode: Int = 1) extends Actor {
+  /**
+   * standard  one-request/one response proxy, which allows to write (myActor ? MyRequest).mapTo[MyResponse]
+   * @param client AMQP RPC Client
+   * @param exchange exchange to which requests will be sent
+   * @param routingKey routing key with which requests will be sent
+   * @param serializer message serializer
+   * @param timeout response time-out
+   * @param mandatory AMQP mandatory flag used to sent requests with; default to true
+   * @param immediate AMQP immediate flag used to sent requests with; default to false; use with caution !!
+   * @param deliveryMode AMQP delivery mode to sent request with; defaults to 1 (
+   */
+  class ProxyClient(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, timeout: Timeout = 30 seconds, mandatory: Boolean = true, immediate: Boolean = false, deliveryMode: Int = 1) extends Actor {
 
     protected def receive = {
       case msg: AnyRef => {
-        val serialized = serialize(msg, serializer)
-        val publish = Publish(exchange, routingKey, serialized._1, Some(serialized._2), mandatory = mandatory, immediate = immediate)
-        val future: Future[RpcClient.Response] = (client ? RpcClient.Request(publish :: Nil, 1))(timeout).mapTo[RpcClient.Response]
+        val (body, properties) = serialize(msg, serializer)
+        val publish = Publish(exchange, routingKey, body, Some(properties), mandatory = mandatory, immediate = immediate)
+        val future = (client ? RpcClient.Request(publish :: Nil, 1))(timeout).mapTo[RpcClient.Response]
         val dest = sender
         future.onComplete {
           case Right(result) => {
             val delivery = result.deliveries(0)
             val response = deserialize(delivery.body, delivery.properties)
-            dest ! response
+            response match {
+              case Failure(error, reason) => dest ! akka.actor.Status.Failure(new RuntimeException("error:%d reason:%s" format(error, reason)))
+              case other => dest ! other
+            }
           }
           case Left(error) => dest ! akka.actor.Status.Failure(error)
         }
@@ -59,16 +73,25 @@ object AmqpProxy {
     }
   }
 
-  class ProxySender(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, mandatory: Boolean = true, immediate: Boolean = true, deliveryMode: Int = 1) extends Actor {
+  /**
+   * standard  one-request/one response proxy, which allows to write (myActor ? MyRequest).mapTo[MyResponse]
+   * @param client AMQP RPC Client
+   * @param exchange exchange to which requests will be sent
+   * @param routingKey routing key with which requests will be sent
+   * @param serializer message serializer
+   * @param mandatory AMQP mandatory flag used to sent requests with; default to true
+   * @param immediate AMQP immediate flag used to sent requests with; default to false; use with caution !!
+   * @param deliveryMode AMQP delivery mode to sent request with; defaults to 1 (
+   */
+  class ProxySender(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, mandatory: Boolean = true, immediate: Boolean = false, deliveryMode: Int = 1) extends Actor {
 
     protected def receive = {
       case msg: AnyRef => {
         val (body, props) = serialize(msg, serializer)
         val propsWithDeliveryMode = new BasicProperties.Builder().contentEncoding(props.getContentEncoding).contentType(props.getContentType).deliveryMode(deliveryMode).build
         val publish = Publish(exchange, routingKey, body, Some(propsWithDeliveryMode), mandatory = mandatory, immediate = immediate)
-        client ! RpcClient.Request(publish :: Nil, 1)
+        client ! RpcClient.Request(publish :: Nil, 0) // 0 means no answer is expected
       }
     }
   }
-
 }
