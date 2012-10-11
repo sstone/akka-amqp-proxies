@@ -7,12 +7,14 @@ fault-tolerant grid where computing nodes can be written in nearly every program
 
 Read more at [http://letitcrash.com/post/29988753572/akka-amqp-proxies](http://letitcrash.com/post/29988753572/akka-amqp-proxies)
 
+The original code has been improved, with the addition of on-the-fly compression and a protobuf serializer (thanks to PM47!)
+
 To start the demo with local actors:
 
-* java -cp akka-amqp-proxies-1.0-SNAPSHOT-shaded.jar com.aphelia.Local
+* java -cp akka-amqp-proxies-1.0-SNAPSHOT-shaded.jar com.aphelia.amqp.proxy.Local
 
 To start the demo with a client proxy and remote server actors:
 
-* java -cp akka-amqp-proxies-1.0-SNAPSHOT-shaded.jar com.aphelia.Server
-* java -cp akka-amqp-proxies-1.0-SNAPSHOT-shaded.jar com.aphelia.Client
+* java -cp akka-amqp-proxies-1.0-SNAPSHOT-shaded.jar com.aphelia.amqp.proxy.Server  (as many times as you want)
+* java -cp akka-amqp-proxies-1.0-SNAPSHOT-shaded.jar com.aphelia.amqp.proxy.Client
 
