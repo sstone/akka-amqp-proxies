@@ -4,7 +4,6 @@ import akka.actor.{Actor, ActorRef}
 import akka.serialization.Serializer
 import com.aphelia.amqp.{RpcClient, RpcServer}
 import com.aphelia.amqp.RpcServer.ProcessResult
-import com.aphelia.amqp.proxy.Serialization._
 import com.rabbitmq.client.AMQP.BasicProperties
 import com.aphelia.amqp.Amqp.{Publish, Delivery}
 import akka.dispatch.{Future, Await}
@@ -12,6 +11,7 @@ import akka.util.Timeout
 import akka.pattern.ask
 import akka.util.duration._
 import grizzled.slf4j.Logging
+import serializers.JsonSerializer
 import com.rabbitmq.client.AMQP
 
 
@@ -19,12 +19,17 @@ object AmqpProxy {
 
   case class Failure(error: Int, reason: String)
 
-  class ProxyServer(server: ActorRef, timeout: Timeout = 30 seconds) extends RpcServer.IProcessor with Logging {
+  def serialize(msg: AnyRef, serializer: Serializer, deliveryMode: Int = 1) = {
+    val body = serializer.toBinary(msg)
+    val props = new BasicProperties.Builder().contentEncoding(Serializers.serializerToName(serializer)).contentType(msg.getClass.getName).deliveryMode(deliveryMode).build
+    (body, props)
+  }
 
-    def makeResult(message: Tuple2[Array[Byte], AMQP.BasicProperties]) = ProcessResult(
-      Some(message._1),
-      Some(message._2)
-    )
+  def deserialize(body: Array[Byte], props: AMQP.BasicProperties) = {
+    Serializers.nameToSerializer(props.getContentEncoding).fromBinary(body,  Some(Class.forName(props.getContentType)))
+  }
+
+  class ProxyServer(server: ActorRef, timeout: Timeout = 30 seconds) extends RpcServer.IProcessor with Logging {
 
     def process(delivery: Delivery) = {
       trace("consumer %s received %s with properties %s".format(delivery.consumerTag, delivery.envelope, delivery.properties))
@@ -33,10 +38,14 @@ object AmqpProxy {
       val future = (server ? request)(timeout).mapTo[AnyRef]
       val response = Await.result(future, timeout.duration)
       debug("sending response of type %s".format(response.getClass.getName))
-      makeResult(serialize(response, delivery.properties.getContentEncoding)) // we answer with the same encoding type
+      val (body, props) = serialize(response, Serializers.nameToSerializer(delivery.properties.getContentEncoding))
+      ProcessResult(Some(body), Some(props)) // we answer with the same encoding type
     }
 
-    def onFailure(delivery: Delivery, e: Exception) = makeResult(serialize(Failure(1, e.toString), delivery.properties.getContentEncoding))
+    def onFailure(delivery: Delivery, e: Exception) = {
+      val (body, props) = serialize(Failure(1, e.toString), JsonSerializer)
+      ProcessResult(Some(body), Some(props))
+    }
   }
 
   /**
@@ -54,9 +63,9 @@ object AmqpProxy {
 
     protected def receive = {
       case msg: AnyRef => {
-        val (body, properties) = serialize(msg, serializer)
-        val publish = Publish(exchange, routingKey, body, Some(properties), mandatory = mandatory, immediate = immediate)
-        val future = (client ? RpcClient.Request(publish :: Nil, 1))(timeout).mapTo[RpcClient.Response]
+        val (body, props) = serialize(msg, serializer, deliveryMode = deliveryMode)
+        val publish = Publish(exchange, routingKey, body, Some(props), mandatory = mandatory, immediate = immediate)
+        val future: Future[RpcClient.Response] = (client ? RpcClient.Request(publish :: Nil, 1))(timeout).mapTo[RpcClient.Response]
         val dest = sender
         future.onComplete {
           case Right(result) => {
@@ -87,10 +96,9 @@ object AmqpProxy {
 
     protected def receive = {
       case msg: AnyRef => {
-        val (body, props) = serialize(msg, serializer)
-        val propsWithDeliveryMode = new BasicProperties.Builder().contentEncoding(props.getContentEncoding).contentType(props.getContentType).deliveryMode(deliveryMode).build
-        val publish = Publish(exchange, routingKey, body, Some(propsWithDeliveryMode), mandatory = mandatory, immediate = immediate)
-        client ! RpcClient.Request(publish :: Nil, 0) // 0 means no answer is expected
+        val (body, props) = serialize(msg, serializer, deliveryMode = deliveryMode)
+        val publish = Publish(exchange, routingKey, body, Some(props), mandatory = mandatory, immediate = immediate)
+        client ! RpcClient.Request(publish :: Nil, 1)
       }
     }
   }
