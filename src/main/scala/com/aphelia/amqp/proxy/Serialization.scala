@@ -1,15 +1,12 @@
 package com.aphelia.amqp.proxy
 
-import com.aphelia.serializers.{SnappyJsonSerializer, JsonSerializer}
-import com.aphelia.amqp.Amqp.Delivery
 import com.rabbitmq.client.AMQP.BasicProperties
 import akka.serialization.Serializer
-import serializers.ProtobufSerializer
-
+import serializers.{SnappyJsonSerializer, JsonSerializer, ThriftSerializer, ProtobufSerializer}
 
 object Serialization {
 
-  val serializersMap = Map("json" -> JsonSerializer, "snappy-json" -> SnappyJsonSerializer, "protobuf" -> ProtobufSerializer)
+  val serializersMap = Map("json" -> JsonSerializer, "snappy-json" -> SnappyJsonSerializer, "protobuf" -> ProtobufSerializer, "thrift" -> ThriftSerializer)
 
   def getSerializer(contentEncoding: String) = serializersMap.getOrElse(contentEncoding, JsonSerializer)
 

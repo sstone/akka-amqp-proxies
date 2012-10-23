@@ -19,7 +19,7 @@ object ProtobufSerializer extends Serializer {
 
   def fromBinary(bytes: Array[Byte], clazz: Option[Class[_]]): AnyRef =
     clazz match {
-      case None    ⇒ throw new IllegalArgumentException("Need a protobuf message class to be able to serialize bytes using protobuf")
-      case Some(c) ⇒ c.getDeclaredMethod("parseFrom", ARRAY_OF_BYTE_ARRAY: _*).invoke(null, bytes).asInstanceOf[Message]
+      case None    ⇒ throw new IllegalArgumentException("Need a protobuf message class to be able to deserialize bytes using protobuf")
+      case Some(c) ⇒ c.getDeclaredMethod("parseFrom", ARRAY_OF_BYTE_ARRAY: _*).invoke(null, bytes)
     }
 }

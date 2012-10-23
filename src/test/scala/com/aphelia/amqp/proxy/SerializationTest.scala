@@ -3,8 +3,8 @@ package com.aphelia.amqp.proxy
 import gpbtest.Gpbtest
 import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Test
-import com.aphelia.serializers.{SnappyJsonSerializer, JsonSerializer}
-import serializers.ProtobufSerializer
+import serializers.{SnappyJsonSerializer, JsonSerializer, ThriftSerializer, ProtobufSerializer}
+import thrifttest.Person
 
 case class Message(a: String, b: Int)
 
@@ -50,6 +50,21 @@ class SerializationTest extends AssertionsForJUnit {
 
     assert(props.getContentEncoding === "protobuf")
     assert(props.getContentType === """com.aphelia.amqp.proxy.gpbtest.Gpbtest$Person""")
+
+    val deserialized = Serialization.deserialize(body, props)
+
+    assert(deserialized === msg)
+  }
+
+  @Test def verifyThriftSerialization() {
+
+    val serializer = ThriftSerializer
+    val msg = new Person().setId(123).setName("toto").setEmail("a@b.com")
+
+    val (body, props) = Serialization.serialize(msg, serializer)
+
+    assert(props.getContentEncoding === "thrift")
+    assert(props.getContentType === """com.aphelia.amqp.proxy.thrifttest.Person""")
 
     val deserialized = Serialization.deserialize(body, props)
 
