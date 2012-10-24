@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.aphelia</groupId>
     <artifactId>akka-amqp-proxies</artifactId>
-    <version>1.0-RC2</version>
+    <version>1.0-SNAPSHOT</version>
     <name>${project.artifactId}</name>
 
 
