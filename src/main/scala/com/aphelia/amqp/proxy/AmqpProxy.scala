@@ -98,7 +98,6 @@ object AmqpProxy {
       case Amqp.Ok(req) => log.debug("successfully processed request %s".format(req))
       case Amqp.Error(req, t) => log.error("error while processing %s : %s".format(req, t))
       case msg: AnyRef => {
-        val toto = sender
         val (body, props) = serialize(msg, serializer, deliveryMode = deliveryMode)
         val publish = Publish(exchange, routingKey, body, Some(props), mandatory = mandatory, immediate = immediate)
         log.debug("sending %s to %s".format(publish, client))
