@@ -1,8 +1,8 @@
 package com.aphelia.amqp.proxy
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{ActorLogging, Actor, ActorRef}
 import akka.serialization.Serializer
-import com.aphelia.amqp.{RpcClient, RpcServer}
+import com.aphelia.amqp.{Amqp, RpcClient, RpcServer}
 import com.aphelia.amqp.RpcServer.ProcessResult
 import com.rabbitmq.client.AMQP.BasicProperties
 import com.aphelia.amqp.Amqp.{Publish, Delivery}
@@ -92,13 +92,17 @@ object AmqpProxy {
    * @param immediate AMQP immediate flag used to sent requests with; default to false; use with caution !!
    * @param deliveryMode AMQP delivery mode to sent request with; defaults to 1 (
    */
-  class ProxySender(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, mandatory: Boolean = true, immediate: Boolean = false, deliveryMode: Int = 1) extends Actor {
+  class ProxySender(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, mandatory: Boolean = true, immediate: Boolean = false, deliveryMode: Int = 1) extends Actor with ActorLogging {
 
     protected def receive = {
+      case Amqp.Ok(req) => log.debug("successfully processed request %s".format(req))
+      case Amqp.Error(req, t) => log.error("error while processing %s : %s".format(req, t))
       case msg: AnyRef => {
+        val toto = sender
         val (body, props) = serialize(msg, serializer, deliveryMode = deliveryMode)
         val publish = Publish(exchange, routingKey, body, Some(props), mandatory = mandatory, immediate = immediate)
-        client ! RpcClient.Request(publish :: Nil, 1)
+        log.debug("sending %s to %s".format(publish, client))
+        client ! publish
       }
     }
   }
