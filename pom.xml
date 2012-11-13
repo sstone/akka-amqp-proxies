@@ -89,7 +89,7 @@
         <dependency>
             <groupId>com.aphelia</groupId>
             <artifactId>amqp-client_${scala.version}</artifactId>
-            <version>1.0</version>
+            <version>1.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
