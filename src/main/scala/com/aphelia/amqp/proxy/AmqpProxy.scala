@@ -95,8 +95,8 @@ object AmqpProxy {
   class ProxySender(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, mandatory: Boolean = true, immediate: Boolean = false, deliveryMode: Int = 1) extends Actor with ActorLogging {
 
     protected def receive = {
-      case Amqp.Ok(req) => log.debug("successfully processed request %s".format(req))
-      case Amqp.Error(req, t) => log.error("error while processing %s : %s".format(req, t))
+      case Amqp.Ok(request, _) => log.debug("successfully processed request %s".format(request))
+      case Amqp.Error(request, error) => log.error("error while processing %s : %s".format(request, error))
       case msg: AnyRef => {
         val (body, props) = serialize(msg, serializer, deliveryMode = deliveryMode)
         val publish = Publish(exchange, routingKey, body, Some(props), mandatory = mandatory, immediate = immediate)
