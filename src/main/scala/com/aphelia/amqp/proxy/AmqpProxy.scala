@@ -31,13 +31,13 @@ object AmqpProxy {
     Serializers.nameToSerializer(props.getContentEncoding).fromBinary(body,  Some(Class.forName(props.getContentType)))
   }
 
-  class ProxyServer(server: ActorRef, timeout: Timeout = 30 seconds) extends RpcServer.IProcessor with Logging {
+  class ProxyServer(handler: ActorRef, timeout: Timeout = 30 seconds) extends RpcServer.IProcessor with Logging {
 
     def process(delivery: Delivery) = {
       trace("consumer %s received %s with properties %s".format(delivery.consumerTag, delivery.envelope, delivery.properties))
       val request = deserialize(delivery.body, delivery.properties)
       debug("handling delivery of type %s".format(request.getClass.getName))
-      val future = (server ? request)(timeout).mapTo[AnyRef]
+      val future = (handler ? request)(timeout).mapTo[AnyRef]
       val response = Await.result(future, timeout.duration)
       debug("sending response of type %s".format(response.getClass.getName))
       val (body, props) = serialize(response, Serializers.nameToSerializer(delivery.properties.getContentEncoding))
@@ -50,13 +50,13 @@ object AmqpProxy {
     }
   }
 
-  class ProxyForwarder(server: ActorRef, timeout: Timeout = 30 seconds) extends RpcServer.IProcessor with Logging {
+  class ProxyForwarder(handler: ActorRef, timeout: Timeout = 30 seconds) extends RpcServer.IProcessor with Logging {
 
     def process(delivery: Delivery) = {
       trace("consumer %s received %s with properties %s".format(delivery.consumerTag, delivery.envelope, delivery.properties))
       val request = deserialize(delivery.body, delivery.properties)
       debug("handling delivery of type %s".format(request.getClass.getName))
-      val future = (server ? request)(timeout).mapTo[Ack]
+      val future = (handler ? request)(timeout).mapTo[Ack]
       val response = Await.result(future, timeout.duration)
       debug("sending ack".format(response.getClass.getName))
       ProcessResult(None, None)
