@@ -3,20 +3,22 @@ package com.aphelia.amqp.proxy
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
-import akka.util.duration._
+import calculator.Calculator.{AddResponse, AddRequest}
+import scala.concurrent.duration._
 import com.rabbitmq.client.ConnectionFactory
 import akka.routing.SmallestMailboxRouter
 import com.aphelia.amqp.{Amqp, RpcClient, RpcServer, ConnectionOwner}
 import com.aphelia.amqp.Amqp.{ChannelParameters, QueueParameters, ExchangeParameters}
-import serializers.JsonSerializer
+import serializers.ProtobufSerializer
+import util.{Failure, Success}
+import concurrent.ExecutionContext
+import akka.serialization.{SerializationExtension, JavaSerializer}
+import com.aphelia.amqp.proxy.Calculator
 
-case class AddRequest(x: Int, y: Int)
-
-case class AddResponse(sum: Int)
 
 class Calculator extends Actor {
-  protected def receive = {
-    case AddRequest(a, b) => sender ! AddResponse(a + b)
+  def receive = {
+    case request: AddRequest => sender ! AddResponse.newBuilder().setSum(request.getX + request.getY).build()
   }
 }
 
@@ -43,13 +45,14 @@ object Server {
 
 object Client {
   def compute(calc: ActorRef) {
+    import ExecutionContext.Implicits.global
     implicit val timeout: Timeout = 5 second
 
     for (x <- 0 to 5) {
       for (y <- 0 to 5) {
-        (calc ? AddRequest(x, y)).onComplete {
-          case Right(AddResponse(sum)) => println("%d + %d = %d".format(x, y, sum))
-          case Left(error) => println(error)
+        (calc ? AddRequest.newBuilder().setX(x).setY(y).build()).onComplete {
+          case Success(response: AddResponse) => println("%d + %d = %d".format(x, y, response.getSum))
+          case Failure(error) => println(error)
         }
       }
     }
@@ -64,7 +67,7 @@ object Client {
     val client = ConnectionOwner.createActor(conn, Props(new RpcClient()), 5 second)
     Amqp.waitForConnection(system, client).await()
     val proxy = system.actorOf(
-      Props(new AmqpProxy.ProxyClient(client, "amq.direct", "calculator", JsonSerializer)),
+      Props(new AmqpProxy.ProxyClient(client, "amq.direct", "calculator", ProtobufSerializer)),
       name = "proxy")
     Client.compute(proxy)
   }

@@ -1,0 +1,16 @@
+package com.aphelia.amqp.proxy.calculator;
+
+// simple calculator API
+
+// add request
+//
+message AddRequest {
+  required int32 x = 1;
+  required int32 y = 2;
+}
+
+// Add response
+//
+message AddResponse {
+  required int32 sum = 1;
+}

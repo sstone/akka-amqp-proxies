@@ -10,6 +10,7 @@ case class Message(a: String, b: Int)
 
 class SerializationTest extends AssertionsForJUnit {
 
+  /*
   @Test def verifyJsonSerialization() {
 
     val serializer = JsonSerializer
@@ -40,6 +41,7 @@ class SerializationTest extends AssertionsForJUnit {
 
     assert(deserialized === msg)
   }
+  */
 
   @Test def verifyProtobufSerialization() {
 

@@ -6,13 +6,16 @@ import com.aphelia.amqp.{Amqp, RpcClient, RpcServer}
 import com.aphelia.amqp.RpcServer.ProcessResult
 import com.rabbitmq.client.AMQP.BasicProperties
 import com.aphelia.amqp.Amqp.{Publish, Delivery}
-import akka.dispatch.{Future, Await}
+import concurrent.{ExecutionContext, Future, Await}
 import akka.util.Timeout
 import akka.pattern.ask
-import akka.util.duration._
-import grizzled.slf4j.Logging
-import serializers.JsonSerializer
+import scala.concurrent.duration._
+import serializers.ProtobufSerializer
+import util.Success
+
+//import serializers.JsonSerializer
 import com.rabbitmq.client.AMQP
+import org.slf4j.LoggerFactory
 
 
 object AmqpProxy {
@@ -29,21 +32,22 @@ object AmqpProxy {
     Serializers.nameToSerializer(props.getContentEncoding).fromBinary(body,  Some(Class.forName(props.getContentType)))
   }
 
-  class ProxyServer(server: ActorRef, timeout: Timeout = 30 seconds) extends RpcServer.IProcessor with Logging {
+  class ProxyServer(server: ActorRef, timeout: Timeout = 30 seconds) extends RpcServer.IProcessor {
+    lazy val logger = LoggerFactory.getLogger(classOf[ProxyServer])
 
     def process(delivery: Delivery) = {
-      trace("consumer %s received %s with properties %s".format(delivery.consumerTag, delivery.envelope, delivery.properties))
+      logger.trace("consumer %s received %s with properties %s".format(delivery.consumerTag, delivery.envelope, delivery.properties))
       val request = deserialize(delivery.body, delivery.properties)
-      debug("handling delivery of type %s".format(request.getClass.getName))
+      logger.debug("handling delivery of type %s".format(request.getClass.getName))
       val future = (server ? request)(timeout).mapTo[AnyRef]
       val response = Await.result(future, timeout.duration)
-      debug("sending response of type %s".format(response.getClass.getName))
+      logger.debug("sending response of type %s".format(response.getClass.getName))
       val (body, props) = serialize(response, Serializers.nameToSerializer(delivery.properties.getContentEncoding))
       ProcessResult(Some(body), Some(props)) // we answer with the same encoding type
     }
 
     def onFailure(delivery: Delivery, e: Exception) = {
-      val (body, props) = serialize(Failure(1, e.toString), JsonSerializer)
+      val (body, props) = serialize(Failure(1, e.toString), ProtobufSerializer)
       ProcessResult(Some(body), Some(props))
     }
   }
@@ -60,15 +64,16 @@ object AmqpProxy {
    * @param deliveryMode AMQP delivery mode to sent request with; defaults to 1 (
    */
   class ProxyClient(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, timeout: Timeout = 30 seconds, mandatory: Boolean = true, immediate: Boolean = false, deliveryMode: Int = 1) extends Actor {
+    import ExecutionContext.Implicits.global
 
-    protected def receive = {
+    def receive = {
       case msg: AnyRef => {
         val (body, props) = serialize(msg, serializer, deliveryMode = deliveryMode)
         val publish = Publish(exchange, routingKey, body, Some(props), mandatory = mandatory, immediate = immediate)
         val future: Future[RpcClient.Response] = (client ? RpcClient.Request(publish :: Nil, 1))(timeout).mapTo[RpcClient.Response]
         val dest = sender
         future.onComplete {
-          case Right(result) => {
+          case Success(result) => {
             val delivery = result.deliveries(0)
             val response = deserialize(delivery.body, delivery.properties)
             response match {
@@ -76,7 +81,7 @@ object AmqpProxy {
               case other => dest ! other
             }
           }
-          case Left(error) => dest ! akka.actor.Status.Failure(error)
+          case util.Failure(error) => dest ! akka.actor.Status.Failure(error)
         }
       }
     }
@@ -94,7 +99,7 @@ object AmqpProxy {
    */
   class ProxySender(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, mandatory: Boolean = true, immediate: Boolean = false, deliveryMode: Int = 1) extends Actor with ActorLogging {
 
-    protected def receive = {
+    def receive = {
       case Amqp.Ok(request, _) => log.debug("successfully processed request %s".format(request))
       case Amqp.Error(request, error) => log.error("error while processing %s : %s".format(request, error))
       case msg: AnyRef => {

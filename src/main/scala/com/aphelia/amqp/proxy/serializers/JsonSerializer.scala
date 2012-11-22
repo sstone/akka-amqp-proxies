@@ -1,5 +1,6 @@
 package com.aphelia.amqp.proxy.serializers
 
+/*
 import akka.serialization.Serializer
 import com.codahale.jerkson.Json
 
@@ -16,3 +17,4 @@ object JsonSerializer extends Serializer {
     Json.parse(string)(Manifest.classType(manifest.get))
   }
 }
+*/
