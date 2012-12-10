@@ -26,7 +26,7 @@ object AmqpProxy {
   }
 
   def deserialize(body: Array[Byte], props: AMQP.BasicProperties) = {
-    Serializers.nameToSerializer(props.getContentEncoding).fromBinary(body,  Some(Class.forName(props.getContentType)))
+    Serializers.nameToSerializer(props.getContentEncoding).fromBinary(body, Some(Class.forName(props.getContentType)))
   }
 
   class ProxyServer(server: ActorRef, timeout: Timeout = 30 seconds) extends RpcServer.IProcessor with Logging {
@@ -35,14 +35,16 @@ object AmqpProxy {
       trace("consumer %s received %s with properties %s".format(delivery.consumerTag, delivery.envelope, delivery.properties))
       val request = deserialize(delivery.body, delivery.properties)
       debug("handling delivery of type %s".format(request.getClass.getName))
-      val future = (server ? request)(timeout).mapTo[AnyRef]
-      val response = Await.result(future, timeout.duration)
-      debug("sending response of type %s".format(response.getClass.getName))
-      val (body, props) = serialize(response, Serializers.nameToSerializer(delivery.properties.getContentEncoding))
-      ProcessResult(Some(body), Some(props)) // we answer with the same encoding type
+      (server ? request)(timeout).mapTo[AnyRef].map {
+        response => {
+          debug("sending response of type %s".format(response.getClass.getName))
+          val (body, props) = serialize(response, Serializers.nameToSerializer(delivery.properties.getContentEncoding))
+          ProcessResult(Some(body), Some(props)) // we answer with the same encoding type
+        }
+      }
     }
 
-    def onFailure(delivery: Delivery, e: Exception) = {
+    def onFailure(delivery: Delivery, e: Throwable) = {
       val (body, props) = serialize(Failure(1, e.toString), JsonSerializer)
       ProcessResult(Some(body), Some(props))
     }
@@ -105,4 +107,5 @@ object AmqpProxy {
       }
     }
   }
+
 }

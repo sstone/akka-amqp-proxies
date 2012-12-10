@@ -2,7 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.aphelia</groupId>
-    <artifactId>akka-amqp-proxies</artifactId>
+    <artifactId>akka-amqp-proxies_${scala.version}</artifactId>
     <version>1.1-SNAPSHOT</version>
     <name>${project.artifactId}</name>
 
@@ -89,7 +89,7 @@
         <dependency>
             <groupId>com.aphelia</groupId>
             <artifactId>amqp-client_${scala.version}</artifactId>
-            <version>1.0</version>
+            <version>1.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
