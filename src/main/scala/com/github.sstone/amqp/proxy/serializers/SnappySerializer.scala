@@ -1,8 +1,12 @@
-package com.aphelia.amqp.proxy.serializers
+package com.github.sstone.amqp.proxy.serializers
 
 import org.xerial.snappy.Snappy
 import akka.serialization.Serializer
 
+/**
+ * adds snappy compression/decompression to an existing serializer
+ * @param serializer original serializer.
+ */
 abstract class SnappySerializer(serializer: Serializer) extends Serializer {
 
   def identifier = 4

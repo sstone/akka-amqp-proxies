@@ -16,15 +16,11 @@ The original code has been improved, with the addition of:
 ## Configuring maven/sbt
 
 ```xml
-<repositories>
-  <repository>
-    <id>sstone snapshots</id>
-    <url>http://sstone.github.com/sstone-mvn-repo/snapshots</url>
-  </repository>
-  <repository>
-    <id>sstone releases</id>
-    <url>http://sstone.github.com/sstone-mvn-repo/releases</url>
-  </repository>
+ <repositories>
+    <repository>
+        <id>sonatype snapshots</id>
+        <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+    </repository>
 </repositories>
 
 <dependencies>
@@ -43,7 +39,7 @@ The original code has been improved, with the addition of:
 
 * version 1.0-SNAPSHOT is compatible with Scala 2.9.2 and Akka 2.0.3
 * version 1.1-SNAPSHOT (master branch) is compatible with Scala 2.9.2 and Akka 2.0.3
-* version 1.1-SNAPSHOT (scala2.10 branch) is compatible with Scala 2.10.0-RC2 and Akka 2.1.0-RC2
+* version 1.1-SNAPSHOT (scala2.10 branch) is compatible with Scala 2.10 and Akka 2.1.0
 
 ## Calculator demo
 
@@ -83,12 +79,12 @@ To start the demo with local actors:
 
 To start the demo with a client proxy and remote server actors:
 
-* mvn exec:java -Dexec.classpathScope=compile -Dexec.mainClass=com.aphelia.amqp.proxy.Server (as many times as you want)
-* mvn exec:java -Dexec.classpathScope=compile -Dexec.mainClass=com.aphelia.amqp.proxy.Client
+* mvn exec:java -Dexec.classpathScope=compile -Dexec.mainClass=com.github.sstone.amqp.proxy.Server (as many times as you want)
+* mvn exec:java -Dexec.classpathScope=compile -Dexec.mainClass=com.github.sstone.amqp.proxy.Client
 
 ## About JSON serialization
 
-I've temporarily commented out JSON serialization code in the scala2.10 branch. Most libraries are not compatible with 2.10RC2
+I've temporarily commented out JSON serialization code in the scala2.10 branch. Most libraries are not compatible with 2.10
 yet, and it seems that new scala features will open up new possibilities for serialization libraries. I'll restore it as soon
 as I know which option to choose from (feel free to suggest one, or better still: send a pull request :-))
 

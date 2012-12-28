@@ -1,4 +1,4 @@
-package com.aphelia.amqp.proxy
+package com.github.sstone.amqp.proxy
 
 import akka.actor._
 import akka.pattern.ask
@@ -7,13 +7,13 @@ import calculator.Calculator.{AddResponse, AddRequest}
 import scala.concurrent.duration._
 import com.rabbitmq.client.ConnectionFactory
 import akka.routing.SmallestMailboxRouter
-import com.aphelia.amqp.{Amqp, RpcClient, RpcServer, ConnectionOwner}
-import com.aphelia.amqp.Amqp.{ChannelParameters, QueueParameters, ExchangeParameters}
+import com.github.sstone.amqp.{Amqp, RpcClient, RpcServer, ConnectionOwner}
+import com.github.sstone.amqp.Amqp.{ChannelParameters, QueueParameters, ExchangeParameters}
 import serializers.ProtobufSerializer
 import util.{Failure, Success}
 import concurrent.ExecutionContext
 import akka.serialization.{SerializationExtension, JavaSerializer}
-import com.aphelia.amqp.proxy.Calculator
+
 
 
 class Calculator extends Actor {

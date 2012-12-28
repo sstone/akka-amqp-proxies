@@ -1,4 +1,4 @@
-package com.aphelia.amqp.proxy
+package com.github.sstone.amqp.proxy
 
 import serializers._
 import akka.serialization.Serializer

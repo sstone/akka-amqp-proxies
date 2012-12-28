@@ -1,4 +1,4 @@
-package com.aphelia.amqp.proxy.calculator;
+package com.github.sstone.amqp.proxy.calculator;
 
 // simple calculator API
 
