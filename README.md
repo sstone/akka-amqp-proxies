@@ -25,7 +25,7 @@ The original code has been improved, with the addition of:
 
 <dependencies>
   <dependency>
-    <groupId>com.aphelia</groupId>
+    <groupId>com.github.sstone</groupId>
     <artifactId>akka-amqp-proxies_SCALA-VERSION</artifactId>
     <version>1.1-SNAPSHOT</version>
   </dependency>
@@ -52,7 +52,7 @@ The demo is simple:
 I've defined a simple protobuf command language, generated java sources and added them to the project:
 
 ```protobuf
-package com.aphelia.amqp.proxy.calculator;
+package com.github.sstone.amqp.proxy.calculator;
 
 // simple calculator API
 
@@ -75,7 +75,7 @@ It should be fairly simple to write compatible sample clients and servers with P
 
 To start the demo with local actors:
 
-* mvn exec:java -Dexec.mainClass=com.aphelia.amqp.proxy.Local
+* mvn exec:java -Dexec.mainClass=com.github.sstone.amqp.proxy.Local
 
 To start the demo with a client proxy and remote server actors:
 
