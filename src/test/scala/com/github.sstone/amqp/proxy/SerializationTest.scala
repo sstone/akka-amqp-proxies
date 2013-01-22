@@ -1,4 +1,4 @@
-package com.aphelia.amqp.proxy
+package com.github.sstone.amqp.proxy
 
 import gpbtest.Gpbtest
 import org.scalatest.junit.AssertionsForJUnit
@@ -19,7 +19,7 @@ class SerializationTest extends AssertionsForJUnit {
 
     assert(new String(body) === """{"a":"toto","b":123}""")
     assert(props.getContentEncoding === "json")
-    assert(props.getContentType === "com.aphelia.amqp.proxy.Message")
+    assert(props.getContentType === "com.github.sstone.amqp.proxy.Message")
 
     val deserialized = AmqpProxy.deserialize(body, props)
 
@@ -34,7 +34,7 @@ class SerializationTest extends AssertionsForJUnit {
     val (body, props) = AmqpProxy.serialize(msg, serializer)
 
     assert(props.getContentEncoding === "snappy-json")
-    assert(props.getContentType === "com.aphelia.amqp.proxy.Message")
+    assert(props.getContentType === "com.github.sstone.amqp.proxy.Message")
 
     val deserialized = AmqpProxy.deserialize(body, props)
 
@@ -49,7 +49,7 @@ class SerializationTest extends AssertionsForJUnit {
     val (body, props) = AmqpProxy.serialize(msg, serializer)
 
     assert(props.getContentEncoding === "protobuf")
-    assert(props.getContentType === """com.aphelia.amqp.proxy.gpbtest.Gpbtest$Person""")
+    assert(props.getContentType === """com.github.sstone.amqp.proxy.gpbtest.Gpbtest$Person""")
 
     val deserialized = AmqpProxy.deserialize(body, props)
 
@@ -64,7 +64,7 @@ class SerializationTest extends AssertionsForJUnit {
     val (body, props) = AmqpProxy.serialize(msg, serializer)
 
     assert(props.getContentEncoding === "snappy-protobuf")
-    assert(props.getContentType === """com.aphelia.amqp.proxy.gpbtest.Gpbtest$Person""")
+    assert(props.getContentType === """com.github.sstone.amqp.proxy.gpbtest.Gpbtest$Person""")
 
     val deserialized = AmqpProxy.deserialize(body, props)
 
@@ -79,7 +79,7 @@ class SerializationTest extends AssertionsForJUnit {
     val (body, props) = AmqpProxy.serialize(msg, serializer)
 
     assert(props.getContentEncoding === "thrift")
-    assert(props.getContentType === """com.aphelia.amqp.proxy.thrifttest.Person""")
+    assert(props.getContentType === """com.github.sstone.amqp.proxy.thrifttest.Person""")
 
     val deserialized = AmqpProxy.deserialize(body, props)
 
@@ -94,7 +94,7 @@ class SerializationTest extends AssertionsForJUnit {
     val (body, props) = AmqpProxy.serialize(msg, serializer)
 
     assert(props.getContentEncoding === "snappy-thrift")
-    assert(props.getContentType === """com.aphelia.amqp.proxy.thrifttest.Person""")
+    assert(props.getContentType === """com.github.sstone.amqp.proxy.thrifttest.Person""")
 
     val deserialized = AmqpProxy.deserialize(body, props)
 

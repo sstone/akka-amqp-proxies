@@ -1,21 +1,53 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.aphelia</groupId>
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+    <groupId>com.github.sstone</groupId>
     <artifactId>akka-amqp-proxies_${scala.version}</artifactId>
     <version>1.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-
+    <description>AMQP "proxies" for Akka</description>
+    <url>https://github.com/sstone/akka-amqp-proxies</url>
 
     <properties>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
         <encoding>UTF-8</encoding>
         <scala.version>2.9.2</scala.version>
-        <akka.version>2.0.3</akka.version>
+        <akka.version>2.0.5</akka.version>
     </properties>
 
+    <licenses>
+        <license>
+            <url>https://raw.github.com/sstone/akka-amqp-proxies/master/LICENCE.txt</url>
+            <name>The MIT License</name>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git@github.com:sstone/akka-amqp-proxies.git</connection>
+        <developerConnection>scm:git:git@github.com:sstone/akka-amqp-proxies.git</developerConnection>
+        <url>git@github.com:sstone/akka-amqp-proxies.git</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <id>sstone</id>
+            <email>samuel.stone@hotmail.co.za</email>
+        </developer>
+        <developer>
+            <id>pm47</id>
+        </developer>
+    </developers>
+
     <build>
+        <sourceDirectory>src/main/scala</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -25,6 +57,27 @@
                     <source>1.6</source>
                     <target>1.6</target>
                 </configuration>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.1.2</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
@@ -42,6 +95,12 @@
                         <goals>
                             <goal>compile</goal>
                             <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>doc-jar</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -62,6 +121,13 @@
                     </includes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <pushChanges>false</pushChanges>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -76,18 +142,14 @@
             <url>http://repo.codahale.com</url>
         </repository>
         <repository>
-            <id>sstone snapshots</id>
-            <url>http://sstone.github.com/sstone-mvn-repo/snapshots</url>
-        </repository>
-        <repository>
-            <id>sstone releases</id>
-            <url>http://sstone.github.com/sstone-mvn-repo/releases</url>
+            <id>sonatype snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </repository>
     </repositories>
 
     <dependencies>
         <dependency>
-            <groupId>com.aphelia</groupId>
+            <groupId>com.github.sstone</groupId>
             <artifactId>amqp-client_${scala.version}</artifactId>
             <version>1.1-SNAPSHOT</version>
         </dependency>
@@ -147,4 +209,34 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>release-sign-artifacts</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

@@ -1,4 +1,4 @@
-package com.aphelia.amqp.proxy.gpbtest;
+package com.github.sstone.amqp.proxy.gpbtest;
 
 message Person {
   required int32 id = 1;

@@ -1,11 +1,11 @@
-package com.aphelia.amqp.proxy
+package com.github.sstone.amqp.proxy
 
 import akka.actor.{ActorLogging, Actor, ActorRef}
 import akka.serialization.Serializer
-import com.aphelia.amqp.{Amqp, RpcClient, RpcServer}
-import com.aphelia.amqp.RpcServer.ProcessResult
+import com.github.sstone.amqp.{Amqp, RpcClient, RpcServer}
+import com.github.sstone.amqp.RpcServer.ProcessResult
 import com.rabbitmq.client.AMQP.BasicProperties
-import com.aphelia.amqp.Amqp.{Publish, Delivery}
+import com.github.sstone.amqp.Amqp.{Publish, Delivery}
 import akka.dispatch.{Future, Await}
 import akka.util.Timeout
 import akka.pattern.ask

@@ -1,4 +1,4 @@
-package com.aphelia.amqp.proxy
+package com.github.sstone.amqp.proxy
 
 import akka.actor._
 import akka.pattern.ask
@@ -6,8 +6,8 @@ import akka.util.Timeout
 import akka.util.duration._
 import com.rabbitmq.client.ConnectionFactory
 import akka.routing.SmallestMailboxRouter
-import com.aphelia.amqp.{Amqp, RpcClient, RpcServer, ConnectionOwner}
-import com.aphelia.amqp.Amqp.{ChannelParameters, QueueParameters, ExchangeParameters}
+import com.github.sstone.amqp.{Amqp, RpcClient, RpcServer, ConnectionOwner}
+import com.github.sstone.amqp.Amqp.{ChannelParameters, QueueParameters, ExchangeParameters}
 import serializers.JsonSerializer
 
 case class AddRequest(x: Int, y: Int)

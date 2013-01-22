@@ -1,4 +1,4 @@
-package com.aphelia.amqp.proxy.serializers
+package com.github.sstone.amqp.proxy.serializers
 
 import akka.serialization.Serializer
 import com.codahale.jerkson.Json

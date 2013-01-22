@@ -14,9 +14,9 @@ The original code has been improved, with the addition of:
 
 To start the demo with local actors:
 
-* mvn exec:java -Dexec.mainClass=com.aphelia.amqp.proxy.Local
+* mvn exec:java -Dexec.mainClass=com.github.sstone.amqp.proxy.Local
 
 To start the demo with a client proxy and remote server actors:
 
-* mvn exec:java -Dexec.mainClass=com.aphelia.amqp.proxy.Server (as many times as you want)
-* mvn exec:java -Dexec.mainClass=com.aphelia.amqp.proxy.Client
+* mvn exec:java -Dexec.mainClass=com.github.sstone.amqp.proxy.Server (as many times as you want)
+* mvn exec:java -Dexec.mainClass=com.github.sstone.amqp.proxy.Client
