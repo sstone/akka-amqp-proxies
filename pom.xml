@@ -164,12 +164,11 @@
             <version>1.0.7</version>
             <scope>runtime</scope>
         </dependency>
-        <!-- dropped for lack of a good option for scala 2.10.0-RC2; will be back soon... -->
-        <!--dependency>
-            <groupId>com.codahale</groupId>
-            <artifactId>jerkson_2.9.1</artifactId>
-            <version>0.5.0</version>
-        </dependency-->
+        <dependency>
+            <groupId>net.liftweb</groupId>
+            <artifactId>lift-json_2.10</artifactId>
+            <version>2.5-M4</version>
+        </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>

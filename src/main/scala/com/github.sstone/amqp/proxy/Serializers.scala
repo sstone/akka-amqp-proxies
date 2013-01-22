@@ -6,10 +6,10 @@ import akka.serialization.Serializer
 object Serializers {
 
   private val map = Map(
-    //"json" -> JsonSerializer,
+    "json" -> JsonSerializer,
     "protobuf" -> ProtobufSerializer,
     "thrift" -> ThriftSerializer,
-    //"snappy-json" -> SnappyJsonSerializer,
+    "snappy-json" -> SnappyJsonSerializer,
     "snappy-protobuf" -> SnappyProtobufSerializer,
     "snappy-thrift" -> SnappyThriftSerializer)
 

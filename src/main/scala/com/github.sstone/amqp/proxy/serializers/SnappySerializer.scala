@@ -26,7 +26,7 @@ abstract class SnappySerializer(serializer: Serializer) extends Serializer {
 
 }
 
-//object SnappyJsonSerializer extends SnappySerializer(JsonSerializer)
+object SnappyJsonSerializer extends SnappySerializer(JsonSerializer)
 
 object SnappyProtobufSerializer extends SnappySerializer(ProtobufSerializer)
 

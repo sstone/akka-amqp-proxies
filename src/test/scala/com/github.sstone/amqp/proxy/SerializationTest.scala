@@ -10,7 +10,6 @@ case class Message(a: String, b: Int)
 
 class SerializationTest extends AssertionsForJUnit {
 
-  /*
   @Test def verifyJsonSerialization() {
 
     val serializer = JsonSerializer
@@ -20,7 +19,7 @@ class SerializationTest extends AssertionsForJUnit {
 
     assert(new String(body) === """{"a":"toto","b":123}""")
     assert(props.getContentEncoding === "json")
-    assert(props.getContentType === "com.aphelia.amqp.proxy.Message")
+    assert(props.getContentType === "com.github.sstone.amqp.proxy.Message")
 
     val deserialized = AmqpProxy.deserialize(body, props)
 
@@ -35,13 +34,12 @@ class SerializationTest extends AssertionsForJUnit {
     val (body, props) = AmqpProxy.serialize(msg, serializer)
 
     assert(props.getContentEncoding === "snappy-json")
-    assert(props.getContentType === "com.aphelia.amqp.proxy.Message")
+    assert(props.getContentType === "com.github.sstone.amqp.proxy.Message")
 
     val deserialized = AmqpProxy.deserialize(body, props)
 
     assert(deserialized === msg)
   }
-  */
 
   @Test def verifyProtobufSerialization() {
 
