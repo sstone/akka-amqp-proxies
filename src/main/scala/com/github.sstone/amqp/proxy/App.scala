@@ -3,24 +3,29 @@ package com.github.sstone.amqp.proxy
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
-import calculator.Calculator.{AddResponse, AddRequest}
 import scala.concurrent.duration._
 import com.rabbitmq.client.ConnectionFactory
 import akka.routing.SmallestMailboxRouter
 import com.github.sstone.amqp.{Amqp, RpcClient, RpcServer, ConnectionOwner}
 import com.github.sstone.amqp.Amqp.{ChannelParameters, QueueParameters, ExchangeParameters}
-import serializers.ProtobufSerializer
+import serializers.JsonSerializer
 import util.{Failure, Success}
 import concurrent.ExecutionContext
-import akka.serialization.{SerializationExtension, JavaSerializer}
 
+object Demo {
 
+  case class AddRequest(x: Int, y: Int)
 
-class Calculator extends Actor {
-  def receive = {
-    case request: AddRequest => sender ! AddResponse.newBuilder().setSum(request.getX + request.getY).build()
+  case class AddResponse(x: Int, y: Int, sum: Int)
+
+  class Calculator extends Actor {
+    def receive = {
+      case AddRequest(x, y) => sender ! AddResponse(x, y, x + y)
+    }
   }
 }
+
+import Demo._
 
 object Server {
   def main(args: Array[String]) {
@@ -50,8 +55,8 @@ object Client {
 
     for (x <- 0 to 5) {
       for (y <- 0 to 5) {
-        (calc ? AddRequest.newBuilder().setX(x).setY(y).build()).onComplete {
-          case Success(response: AddResponse) => println("%d + %d = %d".format(x, y, response.getSum))
+        (calc ? AddRequest(x, y)).onComplete {
+          case Success(AddResponse(x1, y1, sum)) => println("%d + %d = %d".format(x1, y1, sum))
           case Failure(error) => println(error)
         }
       }
@@ -67,7 +72,7 @@ object Client {
     val client = ConnectionOwner.createActor(conn, Props(new RpcClient()), 5 second)
     Amqp.waitForConnection(system, client).await()
     val proxy = system.actorOf(
-      Props(new AmqpProxy.ProxyClient(client, "amq.direct", "calculator", ProtobufSerializer)),
+      Props(new AmqpProxy.ProxyClient(client, "amq.direct", "calculator", JsonSerializer)),
       name = "proxy")
     Client.compute(proxy)
   }
