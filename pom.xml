@@ -141,7 +141,7 @@
         <dependency>
             <groupId>com.github.sstone</groupId>
             <artifactId>amqp-client_${scala.version}</artifactId>
-            <version>1.1-SNAPSHOT</version>
+            <version>1.1</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
