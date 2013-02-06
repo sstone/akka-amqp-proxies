@@ -137,10 +137,6 @@
             <url>http://repo.typesafe.com/typesafe/releases/</url>
         </repository>
         <repository>
-            <id>repo.codahale.com</id>
-            <url>http://repo.codahale.com</url>
-        </repository>
-        <repository>
             <id>sonatype snapshots</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </repository>
