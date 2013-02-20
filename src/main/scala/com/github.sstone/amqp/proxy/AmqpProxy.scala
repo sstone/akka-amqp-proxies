@@ -10,22 +10,35 @@ import concurrent.{ExecutionContext, Future, Await}
 import akka.util.Timeout
 import akka.pattern.ask
 import scala.concurrent.duration._
-import serializers.ProtobufSerializer
-import util.Success
+import serializers.JsonSerializer
+import util.{Failure, Success}
 
 //import serializers.JsonSerializer
 import com.rabbitmq.client.AMQP
 import org.slf4j.LoggerFactory
 
+/**
+ * Thrown when an error occurred on the "server" side and was sent back to the client
+ * If you have a server Actor and create an AMQP proxy for it, then:
+ * {{{
+ *    proxy ? message
+ * }}}
+ * will behave as if you had written;
+ * {{{
+ *    server ? message
+ * }}}
+ * and server had sent back an `akka.actor.Status.ServerFailure(new AmqpProxyException(message)))`
+ * @param message error message
+ */
+class AmqpProxyException(message: String, throwableAsString: String) extends RuntimeException(message)
 
 object AmqpProxy {
 
   /**
-   * "Generic" failure
-   * @param error error code
-   * @param reason error message
+   *  "server" side failure, that will be serialized and sent back to the client proxy
+   * @param message error message
    */
-  case class Failure(error: Int, reason: String)
+  private case class ServerFailure(message: String, throwableAsString: String)
 
   /**
    * serialize a message and return a (blob, AMQP properties) tuple. The following convention is used for the AMQP properties
@@ -75,7 +88,7 @@ object AmqpProxy {
     }
 
     def onFailure(delivery: Delivery, e: Throwable) = {
-      val (body, props) = serialize(Failure(1, e.toString), ProtobufSerializer)
+      val (body, props) = serialize(ServerFailure(e.getMessage, e.toString), JsonSerializer)
       ProcessResult(Some(body), Some(props))
     }
   }
@@ -109,14 +122,14 @@ object AmqpProxy {
           case Success(result) => {
             val delivery = result.deliveries(0)
             val response = deserialize(delivery.body, delivery.properties)
-            // is the response is "Failure" (our own Failure type, not Scala/Akka's) turn it into an Akka failure
+            // is the response is "ServerFailure" (our own ServerFailure type, not Scala/Akka's) turn it into an Akka failure
             // this could also have been done in deserialized but is more explicit here
             response match {
-              case Failure(error, reason) => dest ! akka.actor.Status.Failure(new RuntimeException("error:%d reason:%s" format(error, reason)))
+              case ServerFailure(message, throwableAsString) => dest ! akka.actor.Status.Failure(new AmqpProxyException(message, throwableAsString))
               case other => dest ! other
             }
           }
-          case util.Failure(error) => dest ! akka.actor.Status.Failure(error)
+          case Failure(error) => dest ! akka.actor.Status.Failure(error)
         }
       }
     }
