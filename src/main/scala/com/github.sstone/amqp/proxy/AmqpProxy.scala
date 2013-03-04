@@ -11,7 +11,7 @@ import akka.util.Timeout
 import akka.pattern.ask
 import scala.concurrent.duration._
 import serializers.JsonSerializer
-import util.{Failure, Success}
+import util.{Try, Failure, Success}
 
 //import serializers.JsonSerializer
 import com.rabbitmq.client.AMQP
@@ -76,13 +76,21 @@ object AmqpProxy {
 
     def process(delivery: Delivery) = {
       logger.trace("consumer %s received %s with properties %s".format(delivery.consumerTag, delivery.envelope, delivery.properties))
-      val request = deserialize(delivery.body, delivery.properties)
-      logger.debug("handling delivery of type %s".format(request.getClass.getName))
-      (server ? request)(timeout).mapTo[AnyRef].map {
-        response => {
-          logger.debug("sending response of type %s".format(response.getClass.getName))
-          val (body, props) = serialize(response, Serializers.nameToSerializer(delivery.properties.getContentEncoding))
-          ProcessResult(Some(body), Some(props)) // we answer with the same encoding type
+
+      Try(deserialize(delivery.body, delivery.properties)) match {
+        case Success(request) => {
+          logger.debug("handling delivery of type %s".format(request.getClass.getName))
+          (server ? request)(timeout).mapTo[AnyRef].map {
+            response => {
+              logger.debug("sending response of type %s".format(response.getClass.getName))
+              val (body, props) = serialize(response, Serializers.nameToSerializer(delivery.properties.getContentEncoding))
+              ProcessResult(Some(body), Some(props)) // we answer with the same encoding type
+            }
+          }
+        }
+        case Failure(cause) => {
+          logger.error("deserialization failed", cause)
+          Future.failed(cause)
         }
       }
     }
