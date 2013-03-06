@@ -67,7 +67,11 @@ object AmqpProxy {
    * @see [[com.github.sstone.amqp.proxy.AmqpProxy.serialize()]]
    */
   def deserialize(body: Array[Byte], props: AMQP.BasicProperties) = {
-    Serializers.nameToSerializer(props.getContentEncoding).fromBinary(body,  Some(Class.forName(props.getContentType)))
+    val serializer = props.getContentEncoding match {
+      case "" | null => JsonSerializer // use JSON if not serialization format was specified
+      case encoding => Serializers.nameToSerializer(encoding)
+    }
+    serializer.fromBinary(body,  Some(Class.forName(props.getContentType)))
   }
 
   class ProxyServer(server: ActorRef, timeout: Timeout = 30 seconds) extends RpcServer.IProcessor {
