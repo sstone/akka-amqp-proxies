@@ -63,15 +63,16 @@ object AmqpProxy {
    * deserialize a message
    * @param body serialized message
    * @param props AMQP properties, which contain meta-data for the serialized message
-   * @return a deserialized message
+   * @return a (deserialized message, serializer) tuple
    * @see [[com.github.sstone.amqp.proxy.AmqpProxy.serialize()]]
    */
   def deserialize(body: Array[Byte], props: AMQP.BasicProperties) = {
+    require(props.getContentType != null && props.getContentType != "", "content type is not specified")
     val serializer = props.getContentEncoding match {
       case "" | null => JsonSerializer // use JSON if not serialization format was specified
       case encoding => Serializers.nameToSerializer(encoding)
     }
-    serializer.fromBinary(body,  Some(Class.forName(props.getContentType)))
+    (serializer.fromBinary(body,  Some(Class.forName(props.getContentType))), serializer)
   }
 
   class ProxyServer(server: ActorRef, timeout: Timeout = 30 seconds) extends RpcServer.IProcessor {
@@ -82,12 +83,12 @@ object AmqpProxy {
       logger.trace("consumer %s received %s with properties %s".format(delivery.consumerTag, delivery.envelope, delivery.properties))
 
       Try(deserialize(delivery.body, delivery.properties)) match {
-        case Success(request) => {
+        case Success((request, serializer)) => {
           logger.debug("handling delivery of type %s".format(request.getClass.getName))
           (server ? request)(timeout).mapTo[AnyRef].map {
             response => {
               logger.debug("sending response of type %s".format(response.getClass.getName))
-              val (body, props) = serialize(response, Serializers.nameToSerializer(delivery.properties.getContentEncoding))
+              val (body, props) = serialize(response, serializer)
               ProcessResult(Some(body), Some(props)) // we answer with the same encoding type
             }
           }
@@ -133,7 +134,7 @@ object AmqpProxy {
         future.onComplete {
           case Success(result) => {
             val delivery = result.deliveries(0)
-            val response = deserialize(delivery.body, delivery.properties)
+            val (response, serializer) = deserialize(delivery.body, delivery.properties)
             // is the response is "ServerFailure" (our own ServerFailure type, not Scala/Akka's) turn it into an Akka failure
             // this could also have been done in deserialized but is more explicit here
             response match {
