@@ -14,6 +14,8 @@ The original code has been improved, with the addition of:
 * a protobuf serializer (thanks to PM47!)
 * a thrift serializer
 
+[![Build Status](https://travis-ci.org/sstone/akka-amqp-proxies.png)](https://travis-ci.org/sstone/akka-amqp-proxies)
+
 ## Configuring maven/sbt
 
 ```xml
