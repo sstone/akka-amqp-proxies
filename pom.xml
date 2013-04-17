@@ -17,8 +17,8 @@
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
         <encoding>UTF-8</encoding>
-        <scala.version>2.10</scala.version>
-        <akka.version>2.1.0</akka.version>
+        <scala.version>2.10.1</scala.version>
+        <akka.version>2.1.2</akka.version>
     </properties>
 
     <licenses>
@@ -133,12 +133,12 @@
     <dependencies>
         <dependency>
             <groupId>com.github.sstone</groupId>
-            <artifactId>amqp-client_${scala.version}</artifactId>
+            <artifactId>amqp-client_2.10</artifactId>
             <version>1.1</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_${scala.version}</artifactId>
+            <artifactId>akka-actor_2.10</artifactId>
             <version>${akka.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -151,7 +151,7 @@
         <dependency>
             <groupId>net.liftweb</groupId>
             <artifactId>lift-json_2.10</artifactId>
-            <version>2.5-RC2</version>
+            <version>2.5-RC4</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
@@ -171,13 +171,13 @@
         <!-- test dependencies -->
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-testkit_${scala.version}</artifactId>
+            <artifactId>akka-testkit_2.10</artifactId>
             <version>${akka.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.version}</artifactId>
+            <artifactId>scalatest_2.10</artifactId>
             <version>1.9</version>
             <scope>test</scope>
         </dependency>
