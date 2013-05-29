@@ -2,20 +2,18 @@ package com.github.sstone.amqp.proxy
 
 import akka.actor.{ActorLogging, Actor, ActorRef}
 import akka.serialization.Serializer
-import com.github.sstone.amqp.{Amqp, RpcClient, RpcServer}
-import com.github.sstone.amqp.RpcServer.ProcessResult
-import com.rabbitmq.client.AMQP.BasicProperties
-import com.github.sstone.amqp.Amqp.{Publish, Delivery}
-import concurrent.{ExecutionContext, Future, Await}
+import akka.pattern.{ask, pipe}
 import akka.util.Timeout
-import akka.pattern.ask
-import scala.concurrent.duration._
-import serializers.JsonSerializer
+import concurrent.{ExecutionContext, Future, Await}
+import concurrent.duration._
 import util.{Try, Failure, Success}
-
-//import serializers.JsonSerializer
+import com.rabbitmq.client.AMQP.BasicProperties
 import com.rabbitmq.client.AMQP
 import org.slf4j.LoggerFactory
+import serializers.JsonSerializer
+import com.github.sstone.amqp.{Amqp, RpcClient, RpcServer}
+import com.github.sstone.amqp.RpcServer.ProcessResult
+import com.github.sstone.amqp.Amqp.{Publish, Delivery}
 
 /**
  * Thrown when an error occurred on the "server" side and was sent back to the client
@@ -122,27 +120,21 @@ object AmqpProxy {
 
     def receive = {
       case msg: AnyRef => {
-        // serialize the message
-        val (body, props) = serialize(msg, serializer, deliveryMode = deliveryMode)
-
-        // publish the serialized message (and tell the RPC client that we expect one response)
-        val publish = Publish(exchange, routingKey, body, Some(props), mandatory = mandatory, immediate = immediate)
-        val future = (client ? RpcClient.Request(publish :: Nil, 1))(timeout).mapTo[RpcClient.Response]
-        val dest = sender
-
-        // when the response comes back, deserialize it and send the deserialized message to the original sender
-        future.onComplete {
-          case Success(result) => {
-            val delivery = result.deliveries(0)
-            val (response, serializer) = deserialize(delivery.body, delivery.properties)
-            // is the response is "ServerFailure" (our own ServerFailure type, not Scala/Akka's) turn it into an Akka failure
-            // this could also have been done in deserialized but is more explicit here
-            response match {
-              case ServerFailure(message, throwableAsString) => dest ! akka.actor.Status.Failure(new AmqpProxyException(message, throwableAsString))
-              case other => dest ! other
-            }
+        Try(serialize(msg, serializer, deliveryMode = deliveryMode)) match {
+          case Success((body, props)) => {
+            // publish the serialized message (and tell the RPC client that we expect one response)
+            val publish = Publish(exchange, routingKey, body, Some(props), mandatory = mandatory, immediate = immediate)
+            val future = (client ? RpcClient.Request(publish :: Nil, 1))(timeout).mapTo[RpcClient.Response].map(result => {
+              val delivery = result.deliveries(0)
+              val (response, serializer) = deserialize(delivery.body, delivery.properties)
+              response match {
+                case ServerFailure(message, throwableAsString) => akka.actor.Status.Failure(new AmqpProxyException(message, throwableAsString))
+                case _ => response
+              }
+            })
+            future.pipeTo(sender)
           }
-          case Failure(error) => dest ! akka.actor.Status.Failure(error)
+          case Failure(cause) => sender ! akka.actor.Status.Failure(new AmqpProxyException("Serialization error", cause.getMessage))
         }
       }
     }
