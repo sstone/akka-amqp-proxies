@@ -6,7 +6,7 @@
         <version>7</version>
     </parent>
     <groupId>com.github.sstone</groupId>
-    <artifactId>akka-amqp-proxies_${scala.version}</artifactId>
+    <artifactId>akka-amqp-proxies_2.10</artifactId>
     <version>1.3-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
