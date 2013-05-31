@@ -30,7 +30,7 @@ The original code has been improved, with the addition of:
   <dependency>
     <groupId>com.github.sstone</groupId>
     <artifactId>akka-amqp-proxies_SCALA-VERSION</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.2</version>
   </dependency>
   <dependency>
     <groupId>com.typesafe.akka</groupId>
@@ -43,8 +43,9 @@ The original code has been improved, with the addition of:
 From version 1.1X on, snapshots are published to https://oss.sonatype.org/content/repositories/snapshots/ and releases
 are synced to Maven Central
 
-* version 1.1-SNAPSHOT (master branch) is compatible with Scala 2.9.2 and Akka 2.0.5
-* version 1.1-SNAPSHOT (scala2.10 branch) is compatible with Scala 2.10 and Akka 2.1.0
+* version 1.1 (master branch) is compatible with Scala 2.9.2 and Akka 2.0.5
+* version 1.1 (scala2.10 branch) is compatible with Scala 2.10 and Akka 2.1.0
+* version 1.2 (scala2.10 branch) is compatible with Scala 2.10.1 and Akka 2.1.2
 
 ## Calculator demo
 
