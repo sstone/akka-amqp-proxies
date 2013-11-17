@@ -36,13 +36,13 @@ object Server {
     val conn = system.actorOf(Props(new ConnectionOwner(connFactory)), name = "conn")
     val exchange = ExchangeParameters(name = "amq.direct", exchangeType = "", passive = true)
     val queue = QueueParameters(name = "calculator", passive = false, autodelete = true)
-    val channelParams = Some(ChannelParameters(qos = 1))
+    val channelParams = ChannelParameters(qos = 1)
     // create an AMQP RPC server which consumes messages from queue "calculator" and passes
     // them to our Calculator actor
-    val server = ConnectionOwner.createActor(
+    val server = ConnectionOwner.createChildActor(
       conn,
-      Props(new RpcServer(queue, exchange, "calculator", new AmqpProxy.ProxyServer(calc), channelParams)),
-      2 second)
+      RpcServer.props(queue, exchange, "calculator", new AmqpProxy.ProxyServer(calc), channelParams),
+      name = Some("server"))
 
     Amqp.waitForConnection(system, server).await()
   }
@@ -69,10 +69,10 @@ object Client {
     connFactory.setHost("localhost")
     // create a "connection owner" actor, which will try and reconnect automatically if the connection ins lost
     val conn = system.actorOf(Props(new ConnectionOwner(connFactory)), name = "conn")
-    val client = ConnectionOwner.createActor(conn, Props(new RpcClient()), 5 second)
+    val client = ConnectionOwner.createChildActor(conn, RpcClient.props())
     Amqp.waitForConnection(system, client).await()
     val proxy = system.actorOf(
-      Props(new AmqpProxy.ProxyClient(client, "amq.direct", "calculator", JsonSerializer)),
+      AmqpProxy.ProxyClient.props(client, "amq.direct", "calculator", JsonSerializer),
       name = "proxy")
     Client.compute(proxy)
   }

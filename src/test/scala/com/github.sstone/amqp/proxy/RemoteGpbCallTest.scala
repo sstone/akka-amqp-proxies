@@ -24,7 +24,7 @@ class RemoteGpbCallTest extends TestKit(ActorSystem("TestSystem")) with WordSpec
       val conn = system.actorOf(Props(new ConnectionOwner(connFactory)), name = "conn")
       val exchange = ExchangeParameters(name = "amq.direct", exchangeType = "", passive = true)
       val queue = QueueParameters(name = "calculator-gpb", passive = false, autodelete = true)
-      val channelParams = Some(ChannelParameters(qos = 1))
+      val channelParams = ChannelParameters(qos = 1)
 
       // create a simple calculator actor
       val calc = system.actorOf(Props(new Actor() {
@@ -34,15 +34,14 @@ class RemoteGpbCallTest extends TestKit(ActorSystem("TestSystem")) with WordSpec
       }))
       // create an AMQP proxy server which consumes messages from the "calculator" queue and passes
       // them to our Calculator actor
-      val server = ConnectionOwner.createActor(
+      val server = ConnectionOwner.createChildActor(
         conn,
-        Props(new RpcServer(queue, exchange, "calculator-gpb", new AmqpProxy.ProxyServer(calc), channelParams)),
-        2 second)
+        RpcServer.props(queue, exchange, "calculator-gpb", new AmqpProxy.ProxyServer(calc), channelParams))
 
       // create an AMQP proxy client in front of the "calculator queue"
-      val client = ConnectionOwner.createActor(conn, Props(new RpcClient()), 5 second)
+      val client = ConnectionOwner.createChildActor(conn, RpcClient.props())
       val proxy = system.actorOf(
-        Props(new AmqpProxy.ProxyClient(client, "amq.direct", "calculator-gpb", ProtobufSerializer)),
+        AmqpProxy.ProxyClient.props(client, "amq.direct", "calculator-gpb", ProtobufSerializer),
         name = "proxy")
 
       Amqp.waitForConnection(system, server).await()

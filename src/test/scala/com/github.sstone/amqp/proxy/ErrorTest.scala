@@ -25,7 +25,7 @@ class ErrorTest extends TestKit(ActorSystem("TestSystem")) with WordSpec with Sh
       val conn = system.actorOf(Props(new ConnectionOwner(connFactory)), name = "conn")
       val exchange = ExchangeParameters(name = "amq.direct", exchangeType = "", passive = true)
       val queue = QueueParameters(name = "error", passive = false, autodelete = true)
-      val channelParams = Some(ChannelParameters(qos = 1))
+      val channelParams = ChannelParameters(qos = 1)
 
       case class ErrorRequest(foo: String)
 
@@ -36,15 +36,14 @@ class ErrorTest extends TestKit(ActorSystem("TestSystem")) with WordSpec with Sh
       }))
       // create an AMQP proxy server which consumes messages from the "error" queue and passes
       // them to our nogood actor
-      val server = ConnectionOwner.createActor(
+      val server = ConnectionOwner.createChildActor(
         conn,
-        Props(new RpcServer(queue, exchange, "error", new AmqpProxy.ProxyServer(nogood), channelParams)),
-        2 second)
+        RpcServer.props(queue, exchange, "error", new AmqpProxy.ProxyServer(nogood), channelParams))
 
       // create an AMQP proxy client in front of the "error queue"
-      val client = ConnectionOwner.createActor(conn, Props(new RpcClient()), 5 second)
+      val client = ConnectionOwner.createChildActor(conn, RpcClient.props())
       val proxy = system.actorOf(
-        Props(new AmqpProxy.ProxyClient(client, "amq.direct", "error", JsonSerializer)),
+        AmqpProxy.ProxyClient.props(client, "amq.direct", "error", JsonSerializer),
         name = "proxy")
 
       Amqp.waitForConnection(system, server).await()
@@ -56,8 +55,8 @@ class ErrorTest extends TestKit(ActorSystem("TestSystem")) with WordSpec with Sh
     "handle client-side serialization errors" in {
       val connFactory = new ConnectionFactory()
       val conn = system.actorOf(Props(new ConnectionOwner(connFactory)))
-      val client = ConnectionOwner.createActor(conn, Props(new RpcClient()), 5 second)
-      val proxy = system.actorOf(Props(new AmqpProxy.ProxyClient(client, "amq.direct", "client_side_error", JsonSerializer)))
+      val client = ConnectionOwner.createChildActor(conn, RpcClient.props())
+      val proxy = system.actorOf(AmqpProxy.ProxyClient.props(client, "amq.direct", "client_side_error", JsonSerializer))
 
       val badrequest = Map(1 -> 1) // lift-json will not serialize this, Map keys must be Strings
       val thrown = evaluating(Await.result(proxy ? badrequest, 5 seconds)) should produce[AmqpProxyException]

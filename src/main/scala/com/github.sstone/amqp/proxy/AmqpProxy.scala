@@ -1,6 +1,6 @@
 package com.github.sstone.amqp.proxy
 
-import akka.actor.{ActorLogging, Actor, ActorRef}
+import akka.actor.{Props, ActorLogging, Actor, ActorRef}
 import akka.serialization.Serializer
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
@@ -102,6 +102,11 @@ object AmqpProxy {
       val (body, props) = serialize(ServerFailure(e.getMessage, e.toString), JsonSerializer)
       ProcessResult(Some(body), Some(props))
     }
+  }
+
+  object ProxyClient {
+    def props(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, timeout: Timeout = 30 seconds, mandatory: Boolean = true, immediate: Boolean = false, deliveryMode: Int = 1): Props =
+    Props(new ProxyClient(client, exchange, routingKey, serializer, timeout, mandatory, immediate, deliveryMode))
   }
 
   /**
