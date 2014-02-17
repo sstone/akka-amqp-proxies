@@ -47,8 +47,9 @@ class RemoteGpbCallTest extends TestKit(ActorSystem("TestSystem")) with WordSpec
       Amqp.waitForConnection(system, server).await()
       implicit val timeout: akka.util.Timeout = 5 seconds
 
-      val futures = for (x <- 0 to 5; y <- 0 to 5) yield (proxy ? AddRequest.newBuilder.setX(x).setY(y).build()).mapTo[AddResponse]
+      val futures = for (x <- 0 until 5; y <- 0 until 5) yield (proxy ? AddRequest.newBuilder.setX(x).setY(y).build()).mapTo[AddResponse]
       val result = Await.result(Future.sequence(futures), 5 seconds)
+      assert(result.length === 25)
       assert(result.filter(r => r.getSum != r.getX + r.getY).isEmpty)
     }
   }

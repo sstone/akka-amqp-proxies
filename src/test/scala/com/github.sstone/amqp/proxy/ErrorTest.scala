@@ -6,7 +6,7 @@ import org.scalatest.WordSpec
 import org.scalatest.matchers.ShouldMatchers
 import akka.testkit.TestKit
 import akka.actor.{Actor, Props, ActorSystem}
-import akka.pattern.ask
+import akka.pattern.{AskTimeoutException, ask}
 import concurrent.Await
 import concurrent.duration._
 import com.rabbitmq.client.ConnectionFactory
@@ -14,8 +14,13 @@ import com.github.sstone.amqp.{Amqp, RpcClient, RpcServer, ConnectionOwner}
 import com.github.sstone.amqp.Amqp.{ChannelParameters, QueueParameters, ExchangeParameters}
 import serializers.JsonSerializer
 
+object ErrorTest {
+  case class ErrorRequest(foo: String)
+}
+
 @RunWith(classOf[JUnitRunner])
 class ErrorTest extends TestKit(ActorSystem("TestSystem")) with WordSpec with ShouldMatchers {
+  import ErrorTest.ErrorRequest
   implicit val timeout: akka.util.Timeout = 5 seconds
 
   "AMQP Proxy" should {
@@ -27,7 +32,6 @@ class ErrorTest extends TestKit(ActorSystem("TestSystem")) with WordSpec with Sh
       val queue = QueueParameters(name = "error", passive = false, autodelete = true)
       val channelParams = ChannelParameters(qos = 1)
 
-      case class ErrorRequest(foo: String)
 
       val nogood = system.actorOf(Props(new Actor() {
         def receive = {
@@ -61,6 +65,30 @@ class ErrorTest extends TestKit(ActorSystem("TestSystem")) with WordSpec with Sh
       val badrequest = Map(1 -> 1) // lift-json will not serialize this, Map keys must be Strings
       val thrown = evaluating(Await.result(proxy ? badrequest, 5 seconds)) should produce[AmqpProxyException]
       thrown.getMessage should include("Serialization")
+    }
+
+    "handle server-side timeouts" in {
+      val connFactory = new ConnectionFactory()
+      val conn = system.actorOf(Props(new ConnectionOwner(connFactory)))
+
+      // create an actor that does nothing
+      val donothing = system.actorOf(Props(new Actor() {
+        def receive = {
+          case msg => {}
+        }
+      }))
+      val exchange = ExchangeParameters(name = "amq.direct", exchangeType = "", passive = true)
+      val queue = QueueParameters(name = "donothing", passive = false, autodelete = true)
+      val channelParams = ChannelParameters(qos = 1)
+      val server = ConnectionOwner.createChildActor(
+        conn,
+        RpcServer.props(queue, exchange, "donothing", new AmqpProxy.ProxyServer(donothing, timeout = 1 second), channelParams))
+
+      val client = ConnectionOwner.createChildActor(conn, RpcClient.props())
+      val proxy = system.actorOf(AmqpProxy.ProxyClient.props(client, "amq.direct", "donothing", JsonSerializer, timeout = 2 seconds))
+
+      Amqp.waitForConnection(system, server, client).await()
+      evaluating(Await.result(proxy ? "test", 5 seconds)) should produce[AskTimeoutException]
     }
   }
 }

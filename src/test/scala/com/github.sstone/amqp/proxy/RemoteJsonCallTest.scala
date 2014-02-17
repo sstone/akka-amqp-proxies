@@ -14,8 +14,15 @@ import com.github.sstone.amqp.{RpcClient, Amqp, RpcServer, ConnectionOwner}
 import com.github.sstone.amqp.Amqp.{ChannelParameters, QueueParameters, ExchangeParameters}
 import concurrent.{Await, Future, ExecutionContext}
 
+object RemoteJsonCallTest {
+  case class AddRequest(x: Int, y: Int)
+  case class AddResponse(x: Int, y: Int, sum: Int)
+}
+
 @RunWith(classOf[JUnitRunner])
 class RemoteJsonCallTest extends TestKit(ActorSystem("TestSystem")) with WordSpec with ShouldMatchers {
+  import RemoteJsonCallTest._
+
   "AMQP Proxy" should {
     "handle JSON calls" in {
       import ExecutionContext.Implicits.global
@@ -25,8 +32,6 @@ class RemoteJsonCallTest extends TestKit(ActorSystem("TestSystem")) with WordSpe
       val queue = QueueParameters(name = "calculator", passive = false, autodelete = true)
       val channelParams = ChannelParameters(qos = 1)
 
-      case class AddRequest(x: Int, y: Int)
-      case class AddResponse(x: Int, y: Int, sum: Int)
 
       // create a simple calculator actor
       val calc = system.actorOf(Props(new Actor() {
@@ -49,8 +54,9 @@ class RemoteJsonCallTest extends TestKit(ActorSystem("TestSystem")) with WordSpe
       Amqp.waitForConnection(system, server).await()
       implicit val timeout: akka.util.Timeout = 5 seconds
 
-      val futures = for (x <- 0 to 5; y <- 0 to 5) yield (proxy ? AddRequest(x, y)).mapTo[AddResponse]
+      val futures = for (x <- 0 until 5; y <- 0 until 5) yield (proxy ? AddRequest(x, y)).mapTo[AddResponse]
       val result = Await.result(Future.sequence(futures), 5 seconds)
+      assert(result.length === 25)
       assert(result.filter(r => r.sum != r.x + r.y).isEmpty)
     }
   }

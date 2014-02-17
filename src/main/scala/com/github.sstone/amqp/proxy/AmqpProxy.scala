@@ -33,7 +33,7 @@ class AmqpProxyException(message: String, throwableAsString: String) extends Run
 object AmqpProxy {
 
   /**
-   *  "server" side failure, that will be serialized and sent back to the client proxy
+   * "server" side failure, that will be serialized and sent back to the client proxy
    * @param message error message
    */
   private case class ServerFailure(message: String, throwableAsString: String)
@@ -42,8 +42,8 @@ object AmqpProxy {
    * serialize a message and return a (blob, AMQP properties) tuple. The following convention is used for the AMQP properties
    * the message will be sent with:
    * <ul>
-   *   <li>contentEncoding is set to the name of the serializer that is used</li>
-   *   <li>contentType is set to the name of the message class</li>
+   * <li>contentEncoding is set to the name of the serializer that is used</li>
+   * <li>contentType is set to the name of the message class</li>
    * </ul>
    * @param msg input message
    * @param serializer serializer
@@ -62,7 +62,7 @@ object AmqpProxy {
    * @param body serialized message
    * @param props AMQP properties, which contain meta-data for the serialized message
    * @return a (deserialized message, serializer) tuple
-   * @see [[com.github.sstone.amqp.proxy.AmqpProxy.serialize()]]
+   * @see [[com.github.sstone.amqp.proxy.AmqpProxy.serialize( )]]
    */
   def deserialize(body: Array[Byte], props: AMQP.BasicProperties) = {
     require(props.getContentType != null && props.getContentType != "", "content type is not specified")
@@ -70,11 +70,13 @@ object AmqpProxy {
       case "" | null => JsonSerializer // use JSON if not serialization format was specified
       case encoding => Serializers.nameToSerializer(encoding)
     }
-    (serializer.fromBinary(body,  Some(Class.forName(props.getContentType))), serializer)
+    (serializer.fromBinary(body, Some(Class.forName(props.getContentType))), serializer)
   }
 
   class ProxyServer(server: ActorRef, timeout: Timeout = 30 seconds) extends RpcServer.IProcessor {
+
     import ExecutionContext.Implicits.global
+
     lazy val logger = LoggerFactory.getLogger(classOf[ProxyServer])
 
     def process(delivery: Delivery) = {
@@ -83,13 +85,17 @@ object AmqpProxy {
       Try(deserialize(delivery.body, delivery.properties)) match {
         case Success((request, serializer)) => {
           logger.debug("handling delivery of type %s".format(request.getClass.getName))
-          (server ? request)(timeout).mapTo[AnyRef].map {
-            response => {
-              logger.debug("sending response of type %s".format(response.getClass.getName))
-              val (body, props) = serialize(response, serializer)
-              ProcessResult(Some(body), Some(props)) // we answer with the same encoding type
-            }
+
+          val future = for {
+            response <- (server ? request)(timeout).mapTo[AnyRef]
+            _ = logger.debug("sending response of type %s".format(response.getClass.getName))
+            (body, props) = serialize(response, serializer)
+          } yield ProcessResult(Some(body), Some(props))
+
+          future.onFailure {
+            case cause => logger.error(s"inner call to server actor $server failed", cause)
           }
+          future
         }
         case Failure(cause) => {
           logger.error("deserialization failed", cause)
@@ -106,7 +112,7 @@ object AmqpProxy {
 
   object ProxyClient {
     def props(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, timeout: Timeout = 30 seconds, mandatory: Boolean = true, immediate: Boolean = false, deliveryMode: Int = 1): Props =
-    Props(new ProxyClient(client, exchange, routingKey, serializer, timeout, mandatory, immediate, deliveryMode))
+      Props(new ProxyClient(client, exchange, routingKey, serializer, timeout, mandatory, immediate, deliveryMode))
   }
 
   /**
@@ -121,6 +127,7 @@ object AmqpProxy {
    * @param deliveryMode AMQP delivery mode to sent request with; defaults to 1 (
    */
   class ProxyClient(client: ActorRef, exchange: String, routingKey: String, serializer: Serializer, timeout: Timeout = 30 seconds, mandatory: Boolean = true, immediate: Boolean = false, deliveryMode: Int = 1) extends Actor {
+
     import ExecutionContext.Implicits.global
 
     def receive = {
@@ -168,4 +175,5 @@ object AmqpProxy {
       }
     }
   }
+
 }
