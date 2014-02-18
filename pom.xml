@@ -134,7 +134,7 @@
         <dependency>
             <groupId>com.github.sstone</groupId>
             <artifactId>amqp-client_2.10</artifactId>
-            <version>1.4-ML4</version>
+            <version>1.3-ML4</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
