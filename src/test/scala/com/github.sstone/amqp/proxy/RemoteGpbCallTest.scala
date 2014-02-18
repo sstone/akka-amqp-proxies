@@ -1,24 +1,24 @@
 package com.github.sstone.amqp.proxy
 
-import akka.testkit.{ImplicitSender, TestKit}
 import akka.actor.{Actor, Props, ActorSystem}
 import akka.pattern.ask
+import akka.testkit.{ImplicitSender, TestKit}
 import calculator.Calculator.{AddResponse, AddRequest}
-import org.scalatest.WordSpec
-import org.scalatest.matchers.ShouldMatchers
-import concurrent.{Future, Await, ExecutionContext}
-import com.rabbitmq.client.ConnectionFactory
-import com.github.sstone.amqp.{Amqp, RpcClient, RpcServer, ConnectionOwner}
-import com.github.sstone.amqp.Amqp._
-import serializers.{ProtobufSerializer, JsonSerializer}
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import concurrent.duration._
+import com.github.sstone.amqp.Amqp.Binding
 import com.github.sstone.amqp.Amqp.ChannelParameters
 import com.github.sstone.amqp.Amqp.ExchangeParameters
-import com.github.sstone.amqp.Amqp.Binding
 import com.github.sstone.amqp.Amqp.QueueParameters
+import com.github.sstone.amqp.Amqp._
+import com.github.sstone.amqp.{Amqp, RpcClient, RpcServer, ConnectionOwner}
+import com.rabbitmq.client.ConnectionFactory
+import concurrent.duration._
+import concurrent.{Future, Await, ExecutionContext}
 import java.util.concurrent.TimeUnit
+import org.junit.runner.RunWith
+import org.scalatest.WordSpec
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.matchers.ShouldMatchers
+import serializers.ProtobufSerializer
 
 @RunWith(classOf[JUnitRunner])
 class RemoteGpbCallTest extends TestKit(ActorSystem("TestSystem")) with ImplicitSender with WordSpec with ShouldMatchers {
